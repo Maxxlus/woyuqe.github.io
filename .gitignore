@@ -1,0 +1,19 @@
+# ── секреты (НЕ коммитить!) ──
+.env
+
+# ── python ──
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+
+# ── данные и бэкапы ──
+*.bak_*
+reminders.db
+_to_delete/
+_miniapp_update.zip
+
+# ── ОС ──
+.DS_Store
+Thumbs.db

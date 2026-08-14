@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#0a0c12">
+<title>Woyuqe</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+  :root{
+    --bg:#0a0c12; --bg2:#0e1220;
+    --surface:rgba(255,255,255,.05);
+    --surface-2:rgba(255,255,255,.08);
+    --border:rgba(255,255,255,.08);
+    --text:#eef1f7; --muted:#8b93a7;
+    --accent:#7c5cff; --accent-2:#6d4dfb;
+    --green:#34c759;
+    --radius:18px;
+    --safe-top:env(safe-area-inset-top,0px);
+    --safe-bottom:env(safe-area-inset-bottom,0px);
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;height:100%}
+  body{
+    background:
+      radial-gradient(120% 60% at 50% -10%, #1a1740 0%, rgba(26,23,64,0) 55%),
+      radial-gradient(90% 50% at 100% 0%, #10233f 0%, rgba(16,35,63,0) 50%),
+      var(--bg);
+    color:var(--text);
+    font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    -webkit-font-smoothing:antialiased;
+    overflow:hidden;
+  }
+  .app{display:flex;flex-direction:column;height:100dvh;height:100vh;max-width:560px;margin:0 auto}
+
+  /* Header */
+  header{
+    padding:calc(var(--safe-top) + 14px) 18px 10px;
+    display:flex;align-items:center;gap:12px;flex:0 0 auto;
+  }
+  .h-back{
+    width:34px;height:34px;border:none;border-radius:12px;
+    background:var(--surface);color:var(--text);font-size:20px;
+    display:none;align-items:center;justify-content:center;cursor:pointer;flex:0 0 auto;
+  }
+  .app[data-view="home"] .h-back{display:none}
+  .app:not([data-view="home"]) .h-back{display:flex}
+  .h-title{display:flex;flex-direction:column;line-height:1.15;flex:1 1 auto;min-width:0}
+  .h-title b{font-size:19px;font-weight:700;letter-spacing:.2px}
+  .h-title span{font-size:12px;color:var(--muted)}
+  .h-gear{
+    width:34px;height:34px;border:none;border-radius:12px;
+    background:var(--surface);color:var(--muted);font-size:16px;cursor:pointer;flex:0 0 auto;
+  }
+
+  main{flex:1 1 auto;overflow-y:auto;overflow-x:hidden;padding:6px 16px 12px;-webkit-overflow-scrolling:touch}
+  .view{display:none;animation:fade .28s ease}
+  .app[data-view="home"] #view-home{display:block}
+  .app[data-view="site"] #view-site{display:flex}
+  .app[data-view="done"] #view-done{display:flex}
+  .app[data-view="chat"] #view-chat{display:flex}
+  @keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+  /* App grid */
+  .grid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px 4px;padding-top:4px}
+  @media(max-width:340px){.grid{grid-template-columns:repeat(3,1fr)}}
+  .tile{
+    background:none;border:none;cursor:pointer;color:var(--text);
+    display:flex;flex-direction:column;align-items:center;gap:8px;
+    padding:12px 4px 10px;border-radius:16px;transition:background .15s,transform .1s;
+  }
+  .tile:active{transform:scale(.92);background:var(--surface)}
+  .tile-ic{
+    width:60px;height:60px;border-radius:17px;flex:0 0 auto;
+    display:flex;align-items:center;justify-content:center;
+    background:var(--surface);border:1px solid var(--border);
+    box-shadow:0 6px 18px rgba(0,0,0,.35);overflow:hidden;position:relative;
+  }
+  .tile-ic img{width:60%;height:60%;object-fit:contain;display:block}
+  .tile-ic svg{width:60%;height:60%;display:block}
+  .tile-ic.letter{font-size:26px;font-weight:700;color:#fff}
+  .tile-label{font-size:11.5px;color:#c7ccd8;text-align:center;line-height:1.2;
+    max-width:74px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+  /* Special tiles */
+  .tile-ic.site{background:linear-gradient(160deg,#7c5cff,#5b3ee0);border-color:transparent}
+  .tile-ic.site svg{width:54%;height:54%}
+  .tile-ic.add{background:none;border:2px dashed rgba(255,255,255,.22);box-shadow:none}
+  .tile-ic.add svg{width:40%;height:40%;opacity:.6}
+
+  section.section-label{font-size:12px;color:var(--muted);margin:14px 4px 2px;font-weight:600;letter-spacing:.3px}
+
+  /* Site view */
+  #view-site,#view-done{flex-direction:column;align-items:center;justify-content:center;
+    text-align:center;min-height:72vh;gap:8px;padding:0 8px}
+  .big-ic{
+    width:132px;height:132px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+    margin-bottom:12px;position:relative;
+  }
+  .big-ic.globe{background:radial-gradient(circle at 50% 40%,rgba(124,92,255,.28),rgba(124,92,255,0) 70%)}
+  .big-ic.globe svg{width:96px;height:96px;filter:drop-shadow(0 8px 24px rgba(124,92,255,.5))}
+  .big-ic.check{background:radial-gradient(circle at 50% 40%,rgba(52,199,89,.22),rgba(52,199,89,0) 70%)}
+  .big-ic.check svg{width:104px;height:104px;filter:drop-shadow(0 8px 24px rgba(52,199,89,.45))}
+  .v-title{font-size:23px;font-weight:700;margin:2px 0}
+  .v-sub{font-size:14px;color:var(--muted);max-width:300px;line-height:1.45;margin-bottom:20px}
+  .v-url{font-size:15px;color:#cdd3e0;word-break:break-all;max-width:320px;margin-bottom:26px}
+  .field{
+    width:100%;max-width:340px;background:var(--surface);border:1px solid var(--border);
+    border-radius:14px;padding:15px 16px;color:var(--text);font-size:16px;outline:none;margin-bottom:14px;
+  }
+  .field:focus{border-color:var(--accent)}
+  .field::placeholder{color:#5c6478}
+  .btn{
+    width:100%;max-width:340px;border:none;border-radius:14px;padding:15px;font-size:16px;font-weight:600;
+    color:#fff;cursor:pointer;background:linear-gradient(135deg,#7c5cff,#6031e8);
+    box-shadow:0 10px 26px rgba(108,61,232,.45);transition:transform .1s,opacity .2s;
+  }
+  .btn:active{transform:scale(.97)}
+  .btn.ghost{background:transparent;border:1.5px solid var(--accent);color:#c9bcff;box-shadow:none}
+  .btn[disabled]{opacity:.55;pointer-events:none}
+
+  /* Chat view */
+  #view-chat{flex-direction:column;gap:12px;padding-bottom:8px}
+  .msg{max-width:82%;padding:11px 14px;border-radius:16px;font-size:15px;line-height:1.4;word-wrap:break-word;white-space:pre-wrap}
+  .msg.me{align-self:flex-end;background:linear-gradient(135deg,#7c5cff,#6031e8);color:#fff;border-bottom-right-radius:5px}
+  .msg.ai{align-self:flex-start;background:var(--surface-2);border:1px solid var(--border);border-bottom-left-radius:5px}
+  .msg.sys{align-self:center;background:none;color:var(--muted);font-size:13px;text-align:center}
+  .chat-empty{margin:auto;text-align:center;color:var(--muted);font-size:14px;line-height:1.5}
+  .chat-empty .spark{font-size:40px;margin-bottom:10px}
+  .typing{align-self:flex-start;display:flex;gap:4px;padding:14px 16px;background:var(--surface-2);border-radius:16px;border-bottom-left-radius:5px}
+  .typing i{width:7px;height:7px;border-radius:50%;background:#9aa2b6;animation:blink 1.2s infinite}
+  .typing i:nth-child(2){animation-delay:.2s}.typing i:nth-child(3){animation-delay:.4s}
+  @keyframes blink{0%,60%,100%{opacity:.3}30%{opacity:1}}
+
+  /* Composer */
+  .composer{
+    flex:0 0 auto;display:flex;align-items:center;gap:10px;
+    padding:10px 14px calc(var(--safe-bottom) + 12px);
+    background:linear-gradient(180deg,rgba(10,12,18,0),rgba(10,12,18,.9) 30%);
+  }
+  .composer .spark{
+    width:44px;height:44px;flex:0 0 auto;border:none;border-radius:14px;cursor:pointer;
+    background:var(--surface);display:flex;align-items:center;justify-content:center;
+  }
+  .composer .spark svg{width:22px;height:22px}
+  .composer .inp-wrap{flex:1 1 auto;display:flex;align-items:center;background:var(--surface);
+    border:1px solid var(--border);border-radius:22px;padding:2px 4px 2px 16px}
+  .composer input{flex:1;background:none;border:none;outline:none;color:var(--text);font-size:15px;padding:11px 6px}
+  .composer input::placeholder{color:#5c6478}
+  .composer .send{
+    width:40px;height:40px;flex:0 0 auto;border:none;border-radius:50%;cursor:pointer;
+    background:linear-gradient(135deg,#7c5cff,#6031e8);color:#fff;font-size:18px;
+    display:flex;align-items:center;justify-content:center;transition:transform .1s}
+  .composer .send:active{transform:scale(.9)}
+
+  /* Toast */
+  #toast{
+    position:fixed;left:50%;bottom:calc(var(--safe-bottom) + 92px);transform:translateX(-50%) translateY(20px);
+    background:#1c2130;border:1px solid var(--border);color:var(--text);padding:11px 18px;border-radius:14px;
+    font-size:14px;max-width:88%;text-align:center;opacity:0;pointer-events:none;transition:.25s;z-index:50;
+    box-shadow:0 12px 30px rgba(0,0,0,.5)}
+  #toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+  #toast.err{border-color:rgba(255,90,90,.5)}
+  #toast.ok{border-color:rgba(52,199,89,.5)}
+
+  .banner{background:rgba(255,180,60,.12);border:1px solid rgba(255,180,60,.3);color:#ffd27a;
+    font-size:12.5px;padding:9px 12px;border-radius:12px;margin:2px 0 8px;line-height:1.4}
+</style>
+</head>
+<body>
+<div class="app" data-view="home" id="app">
+  <header>
+    <button class="h-back" id="backBtn" aria-label="Назад">‹</button>
+    <div class="h-title"><b>Woyuqe</b><span>мини-приложение</span></div>
+    <button class="h-gear" id="gearBtn" aria-label="Настройки">⚙</button>
+  </header>
+
+  <main>
+    <!-- HOME -->
+    <div class="view" id="view-home">
+      <div id="banner"></div>
+      <div class="grid" id="grid"></div>
+    </div>
+
+    <!-- SITE INPUT -->
+    <div class="view" id="view-site">
+      <div class="big-ic globe" id="siteGlobe"></div>
+      <div class="v-title">Ввести адрес сайта</div>
+      <div class="v-sub">ИИ сгенерирует оптимальную ссылку и откроет сайт в браузере</div>
+      <input class="field" id="siteInput" placeholder="например: ютуб" autocomplete="off">
+      <button class="btn" id="siteBtn">Открыть сайт</button>
+    </div>
+
+    <!-- SITE DONE -->
+    <div class="view" id="view-done">
+      <div class="big-ic check" id="doneCheck"></div>
+      <div class="v-title">Сайт открыт!</div>
+      <div class="v-url" id="doneUrl"></div>
+      <button class="btn ghost" id="doneAgain">Открыть ещё один сайт</button>
+    </div>
+
+    <!-- CHAT -->
+    <div class="view" id="view-chat">
+      <div class="chat-empty" id="chatEmpty">
+        <div class="spark">✨</div>
+        Спроси что угодно или дай команду ПК —<br>«сделай скриншот», «поставь громкость 30»,<br>«следующий трек», «напомни завтра в 9 позвонить».
+      </div>
+    </div>
+  </main>
+
+  <div class="composer">
+    <button class="spark" id="sparkBtn" aria-label="Чат с ИИ">
+      <svg viewBox="0 0 24 24" fill="none"><path d="M12 3l1.9 4.6L18.5 9l-4.6 1.9L12 15l-1.9-4.1L5.5 9l4.6-1.4L12 3z" fill="#a78bfa"/><circle cx="18" cy="17" r="2.2" fill="#7c5cff"/></svg>
+    </button>
+    <div class="inp-wrap">
+      <input id="askInput" placeholder="Спросить ИИ" autocomplete="off">
+      <button class="send" id="sendBtn" aria-label="Отправить">➤</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+/* ─────────────────── Config ─────────────────── */
+// ↓↓↓ ЗАМЕНИ на HTTPS-адрес своего backend (туннель cloudflared/ngrok или VPS).
+//     Можно не трогать файл: открой ⚙ в шапке и вставь адрес — он сохранится
+//     в браузере. Либо добавь ?api=https://твой-адрес к ссылке.
+const DEFAULT_API_BASE = "https://REPLACE_WITH_YOUR_BACKEND";
+
+const qsApi = new URLSearchParams(location.search).get("api");
+let API_BASE = (qsApi || localStorage.getItem("woyuqe_api") || DEFAULT_API_BASE).replace(/\/+$/,"");
+
+const tg = window.Telegram && window.Telegram.WebApp ? window.Telegram.WebApp : null;
+const INIT_DATA = tg ? tg.initData : "";
+if (tg) { try { tg.ready(); tg.expand(); tg.setHeaderColor("#0a0c12"); tg.setBackgroundColor("#0a0c12"); } catch(e){} }
+
+const app = document.getElementById("app");
+const isConfigured = () => API_BASE && !API_BASE.includes("REPLACE_WITH_YOUR_BACKEND");
+
+/* ─────────────────── Icons ─────────────────── */
+const CDN = "https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/";
+const SVG = {
+  globe:'<svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="#fff" stroke-width="1.7"/><path d="M3 12h18M12 3c2.6 2.6 2.6 15.4 0 18M12 3c-2.6 2.6-2.6 15.4 0 18" stroke="#fff" stroke-width="1.7"/></svg>',
+  plus:'<svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14" stroke="#fff" stroke-width="2.2" stroke-linecap="round"/></svg>',
+  check:'<svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="#34c759" stroke-width="1.8"/><path d="M7.5 12.5l3 3 6-6.5" stroke="#34c759" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+  shield:'<svg viewBox="0 0 24 24"><path d="M12 2 4 5v6c0 5 3.4 8.5 8 10 4.6-1.5 8-5 8-10V5l-8-3z" fill="#22c55e"/><path d="m10.6 14.6-2.5-2.5 1.2-1.2 1.3 1.3 3.6-3.6 1.2 1.2z" fill="#fff"/></svg>',
+  notepad:'<svg viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="18" rx="2.5" fill="#ffd34e"/><rect x="4" y="3" width="16" height="4.5" rx="2.5" fill="#f4b400"/><g stroke="#8a6400" stroke-width="1.5" stroke-linecap="round"><path d="M7 11h10M7 14h10M7 17h6"/></g></svg>',
+  folder:'<svg viewBox="0 0 24 24"><path d="M3 6a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v2H3z" fill="#f0a52a"/><path d="M3 9h18.2a1 1 0 0 1 1 1.13l-1 8A2 2 0 0 1 20.2 20H5.8a2 2 0 0 1-2-1.87l-1-8A1 1 0 0 1 3 9z" fill="#ffcf6b"/></svg>',
+  chart:'<svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="4.5" fill="#1f6feb"/><g fill="#fff"><rect x="6" y="12" width="3" height="6" rx="1"/><rect x="10.5" y="8" width="3" height="10" rx="1"/><rect x="15" y="5.5" width="3" height="12.5" rx="1"/></g></svg>',
+  gear:'<svg viewBox="0 0 24 24"><rect x="2" y="2" width="20" height="20" rx="6" fill="#5b6470"/><g fill="#fff"><rect x="11.1" y="3.6" width="1.8" height="3.2" rx=".9"/><rect x="11.1" y="17.2" width="1.8" height="3.2" rx=".9"/><rect x="3.6" y="11.1" width="3.2" height="1.8" rx=".9"/><rect x="17.2" y="11.1" width="3.2" height="1.8" rx=".9"/></g><circle cx="12" cy="12" r="4.2" fill="#fff"/><circle cx="12" cy="12" r="1.9" fill="#5b6470"/></svg>',
+  calc:'<svg viewBox="0 0 24 24"><rect x="4.5" y="2" width="15" height="20" rx="3.2" fill="#2b2f36"/><rect x="6.8" y="4.2" width="10.4" height="4" rx="1.2" fill="#9be15d"/><g fill="#c9ced6"><circle cx="8.4" cy="12" r="1.25"/><circle cx="12" cy="12" r="1.25"/><circle cx="15.6" cy="12" r="1.25"/><circle cx="8.4" cy="16" r="1.25"/><circle cx="12" cy="16" r="1.25"/></g><rect x="14.35" y="14.75" width="2.5" height="4.5" rx="1.25" fill="#ff9500"/></svg>',
+  palette:'<svg viewBox="0 0 24 24"><path d="M12 3a9 9 0 1 0 0 18c1.2 0 2-.9 2-2 0-.5-.2-.9-.5-1.3-.3-.4-.5-.8-.5-1.2 0-.9.7-1.5 1.6-1.5H16a5 5 0 0 0 5-5c0-4-4-7-9-7z" fill="#eef1f7"/><circle cx="7.6" cy="11" r="1.35" fill="#ef4444"/><circle cx="10" cy="7.4" r="1.35" fill="#f59e0b"/><circle cx="14" cy="7.4" r="1.35" fill="#22c55e"/><circle cx="16.5" cy="11" r="1.35" fill="#3b82f6"/></svg>',
+
+  // ── бренд-глифы (полноцветные, встроены — рендерятся везде, офлайн тоже) ──
+  chrome:'<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" fill="#fff"/><path fill="#EA4335" d="M12 3a9 9 0 0 1 7.79 4.5H12a4.5 4.5 0 0 0-3.9 6.75L4.9 6.6A9 9 0 0 1 12 3z"/><path fill="#FBBC05" d="M19.79 7.5A9 9 0 0 1 12 21l3.9-6.75A4.5 4.5 0 0 0 16 9.75z"/><path fill="#34A853" d="M4.9 6.6 8.1 12.25A4.5 4.5 0 0 0 12 21L4.2 21A9 9 0 0 1 4.9 6.6z"/><circle cx="12" cy="12" r="4.4" fill="#fff"/><circle cx="12" cy="12" r="3.3" fill="#4285F4"/></svg>',
+  firefox:'<svg viewBox="0 0 24 24"><circle cx="12" cy="12.4" r="10" fill="#ff9d00"/><path fill="#ff5721" d="M12.4 2.2c2.4 1.9 2.3 4.4.5 5.7 3.1-.5 5.4 1.7 5.7 4.6a6.8 6.8 0 1 1-11-5.3c-.5 1.6.1 3 1.6 3.6-1-2.4.4-5.6 2.7-6.9-.6-.5-.6-1.2 0-1.7z"/><path fill="#ffcd35" d="M13 8.6c2 .9 3.1 2.6 3 4.7a3.9 3.9 0 1 1-6-3.4c.2 1.2 1.1 2 2.5 1.8-1-.9-.9-2.1.5-3.1z"/></svg>',
+  steam:'<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" fill="#1b2838"/><circle cx="15.4" cy="9" r="3" fill="none" stroke="#c7d5e0" stroke-width="1.4"/><circle cx="15.4" cy="9" r="1.35" fill="#c7d5e0"/><circle cx="8" cy="15.2" r="2.5" fill="none" stroke="#c7d5e0" stroke-width="1.4"/><path stroke="#c7d5e0" stroke-width="1.4" d="M13.3 10.7 9.9 13.6"/></svg>',
+  spotify:'<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" fill="#1db954"/><g fill="none" stroke="#fff" stroke-linecap="round"><path stroke-width="1.9" d="M6.8 9.4c3.4-1.05 7.5-.65 10.4 1.05"/><path stroke-width="1.6" d="M7.5 12.4c2.8-.85 6.2-.5 8.6 1"/><path stroke-width="1.35" d="M8.2 15.1c2.1-.62 4.7-.35 6.6.8"/></g></svg>',
+  telegram:'<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" fill="#29b6f6"/><path fill="#fff" d="M17.6 7.2 15.75 16.4c-.14.62-.5.76-1.02.47l-2.82-2.08-1.36 1.31c-.15.15-.28.28-.57.28l.2-2.88 5.23-4.72c.23-.2-.05-.32-.35-.12l-6.46 4.07-2.78-.87c-.6-.19-.62-.6.13-.9l10.86-4.18c.5-.18.94.12.77.9z"/></svg>',
+  vscode:'<svg viewBox="0 0 32 32"><path fill="#0065a9" d="M23.2 2.3 28.8 5v22l-5.6 2.7-11-9-6 4.6L2 22.6 7 16 2 9.4 6.2 6.7l6 4.6z"/><path fill="#1f9cf0" d="M23.2 6.5 14.8 16l8.4 9.5V6.5z"/><path fill="#0065a9" d="m6.2 6.7 6 4.6-1.8 1.4-4.2-3.3z" opacity=".5"/></svg>',
+  word:'<svg viewBox="0 0 24 24"><rect x="3.5" y="3.5" width="17" height="17" rx="3" fill="#2b579a"/><path fill="#fff" d="M6.1 8h1.9l1.05 5.1L10.4 8h1.7l1.35 5.1L14.6 8h1.9l-2.1 8h-1.85l-1.3-4.85L9.95 16H8.2z"/></svg>',
+  excel:'<svg viewBox="0 0 24 24"><rect x="3.5" y="3.5" width="17" height="17" rx="3" fill="#217346"/><path fill="#fff" d="M8 8h2.1l1.9 2.85L13.9 8H16l-2.95 4L16 16h-2.1L12 13.1 10.1 16H8l2.95-4z"/></svg>',
+  roblox:'<svg viewBox="0 0 24 24"><g transform="rotate(-9 12 12)"><rect x="3.6" y="3.6" width="16.8" height="16.8" rx="2.6" fill="#232527"/><rect x="9.1" y="9.1" width="5.8" height="5.8" rx=".6" fill="#fff"/></g></svg>',
+  yandexmusic:'<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" fill="#ffdb4d"/><circle cx="12" cy="12" r="11" fill="url(#ym)"/><defs><linearGradient id="ym" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ff5353"/><stop offset="1" stop-color="#c400ff"/></linearGradient></defs><path fill="#fff" d="M14.6 6v7.35a2.55 2.55 0 1 1-1.55-2.35V8.55l-3.9 1.05v4.6a2.55 2.55 0 1 1-1.55-2.35V8.15z"/></svg>',
+  beamng:'<svg viewBox="0 0 24 24"><rect x="3.5" y="3.5" width="17" height="17" rx="4" fill="#161616"/><path fill="#ff7a00" d="M8 7h4.6a2.7 2.7 0 0 1 .5 5.35A2.8 2.8 0 0 1 12.6 18H8zm2 2v2.35h2.1a1.17 1.17 0 0 0 0-2.35zm0 4.2V16h2.2a1.4 1.4 0 0 0 0-2.8z"/></svg>'
+};
+// canonical key (из executor.py) -> отображение
+const CATALOG = {
+  "telegram":{label:"Telegram",icon:"telegram",svg:SVG.telegram},
+  "chrome":{label:"Google Chrome",icon:"google-chrome",svg:SVG.chrome},
+  "firefox":{label:"Firefox",icon:"firefox",svg:SVG.firefox},
+  "steam":{label:"Steam",icon:"steam",svg:SVG.steam},
+  "spotify":{label:"Spotify",icon:"spotify",svg:SVG.spotify},
+  "vscode":{label:"VS Code",icon:"visual-studio-code",svg:SVG.vscode},
+  "word":{label:"Word",icon:"microsoft-word",svg:SVG.word},
+  "excel":{label:"Excel",icon:"microsoft-excel",svg:SVG.excel},
+  "roblox":{label:"Roblox",icon:"roblox",svg:SVG.roblox},
+  "yandex music":{label:"Яндекс Музыка",icon:"yandex-music",svg:SVG.yandexmusic},
+  "beamng.drive":{label:"BeamNG.drive",icon:"beamng",svg:SVG.beamng},
+  "v2raytun":{label:"VPN",svg:SVG.shield},
+  "notepad":{label:"Блокнот",svg:SVG.notepad},
+  "explorer":{label:"Проводник",svg:SVG.folder},
+  "taskmgr":{label:"Диспетчер задач",svg:SVG.chart},
+  "settings":{label:"Параметры",svg:SVG.gear},
+  "calculator":{label:"Калькулятор",svg:SVG.calc},
+  "paint":{label:"Paint",svg:SVG.palette}
+};
+// если backend недоступен (демо/предпросмотр) — показать этот список
+const FALLBACK_KEYS = Object.keys(CATALOG);
+const FB_COLORS = ["#6d4dfb","#e0457b","#2aa775","#d9822b","#3b82f6","#8b5cf6","#159a8a","#c0392b"];
+function colorFor(k){let h=0;for(const c of k)h=(h*31+c.charCodeAt(0))>>>0;return FB_COLORS[h%FB_COLORS.length];}
+
+function makeIcon(key){
+  const meta = CATALOG[key] || {label:key};
+  const box = document.createElement("div");
+  box.className = "tile-ic";
+  // Официальную иконку берём с CDN (реальный Telegram её грузит). Если сети
+  // нет (офлайн/предпросмотр) или слаг не найден — падаем на встроенный
+  // бренд-глиф. До «первой буквы» доходит только для неизвестных приложений.
+  if (meta.icon){
+    const img = document.createElement("img");
+    img.loading = "lazy"; img.alt = meta.label || key;
+    img.src = CDN + meta.icon + ".svg";
+    img.onerror = () => { if (meta.svg) box.innerHTML = meta.svg; else letterInto(box, key, meta); };
+    box.appendChild(img);
+    return box;
+  }
+  if (meta.svg){ box.innerHTML = meta.svg; return box; }
+  letterInto(box, key, meta);
+  return box;
+}
+function letterInto(box, key, meta){
+  box.innerHTML = "";
+  box.classList.add("letter");
+  box.style.background = "linear-gradient(160deg," + colorFor(key) + ",rgba(0,0,0,.25))";
+  box.style.border = "none";
+  box.textContent = (meta.label || key).trim().charAt(0).toUpperCase();
+}
+
+/* ─────────────────── Views ─────────────────── */
+function showView(v){ app.dataset.view = v; document.querySelector("main").scrollTop = 0; }
+document.getElementById("backBtn").onclick = () => showView("home");
+
+function haptic(kind){ try{ tg && tg.HapticFeedback && tg.HapticFeedback.impactOccurred(kind||"light"); }catch(e){} }
+
+let toastT;
+function toast(msg, type){
+  const t = document.getElementById("toast");
+  t.textContent = msg; t.className = "show " + (type||"");
+  clearTimeout(toastT); toastT = setTimeout(()=>t.className="", 2600);
+}
+
+/* ─────────────────── API ─────────────────── */
+async function api(path, body){
+  if (!isConfigured()) { throw {demo:true}; }
+  const res = await fetch(API_BASE + path, {
+    method: body ? "POST" : "GET",
+    headers: {
+      "Content-Type":"application/json",
+      "X-Telegram-Init-Data": INIT_DATA
+    },
+    body: body ? JSON.stringify(body) : undefined
+  });
+  let data = null; try{ data = await res.json(); }catch(e){}
+  if (!res.ok){
+    const detail = (data && (data.detail||data.error)) || ("HTTP " + res.status);
+    throw new Error(detail);
+  }
+  return data;
+}
+
+/* ─────────────────── Home grid ─────────────────── */
+function tileEl(key, opts){
+  opts = opts || {};
+  const b = document.createElement("button");
+  b.className = "tile";
+  const ic = opts.iconEl || makeIcon(key);
+  if (opts.icClass) ic.classList.add(opts.icClass);
+  const lbl = document.createElement("div");
+  lbl.className = "tile-label";
+  lbl.textContent = opts.label || (CATALOG[key] && CATALOG[key].label) || key;
+  b.appendChild(ic); b.appendChild(lbl);
+  b.onclick = opts.onClick;
+  return b;
+}
+
+function renderGrid(keys){
+  const grid = document.getElementById("grid");
+  grid.innerHTML = "";
+
+  // «Открыть сайт» — первым, заметным
+  const siteIc = document.createElement("div");
+  siteIc.className = "tile-ic site"; siteIc.innerHTML = SVG.globe;
+  grid.appendChild(tileEl("__site__", {
+    iconEl: siteIc, label:"Открыть сайт",
+    onClick:()=>{ haptic(); openSiteView(); }
+  }));
+
+  // приложения из executor.py
+  keys.forEach(key=>{
+    grid.appendChild(tileEl(key, { onClick:()=>onAppClick(key) }));
+  });
+
+  // «Добавить» — подсказка
+  const addIc = document.createElement("div");
+  addIc.className = "tile-ic add"; addIc.innerHTML = SVG.plus;
+  grid.appendChild(tileEl("__add__", {
+    iconEl: addIc, label:"Добавить",
+    onClick:()=>{ haptic(); toast("Добавь приложение в APP_MAP файла agent/executor.py — оно появится здесь автоматически."); }
+  }));
+}
+
+async function onAppClick(key){
+  haptic();
+  const label = (CATALOG[key] && CATALOG[key].label) || key;
+  try{
+    await api("/open_app", { app:key });
+    toast("Открываю: " + label, "ok"); haptic("medium");
+  }catch(err){
+    if (err.demo){ toast("Демо-режим. Настрой backend через ⚙", "err"); return; }
+    toast("Ошибка: " + err.message, "err");
+  }
+}
+
+async function loadApps(){
+  document.getElementById("banner").innerHTML = "";
+  if (!isConfigured()){
+    renderGrid(FALLBACK_KEYS);
+    banner("⚙ Backend не настроен — показан предпросмотр. Нажми ⚙ и вставь адрес backend.");
+    return;
+  }
+  try{
+    const data = await api("/apps");
+    const keys = (data.apps||[]).map(a=>a.key);
+    renderGrid(keys.length ? keys : FALLBACK_KEYS);
+  }catch(err){
+    renderGrid(FALLBACK_KEYS);
+    if (err.message && /запрещ|403/i.test(err.message))
+      banner("⛔ Доступ запрещён: твой chat_id не в списке AUTHORIZED_CHAT_IDS.");
+    else if (err.message && /initData|401/i.test(err.message))
+      banner("Открой приложение через Telegram-бота (кнопка «Открыть Woyuqe»).");
+    else
+      banner("Не удалось связаться с backend. Показан предпросмотр.");
+  }
+}
+function banner(text){ document.getElementById("banner").innerHTML = '<div class="banner">'+text+'</div>'; }
+
+/* ─────────────────── Open site ─────────────────── */
+document.getElementById("siteGlobe").innerHTML = SVG.globe;
+document.getElementById("doneCheck").innerHTML = SVG.check;
+
+function openSiteView(){ showView("site"); const i=document.getElementById("siteInput"); i.value=""; setTimeout(()=>i.focus(),200); }
+document.getElementById("doneAgain").onclick = ()=>{ haptic(); openSiteView(); };
+
+const siteBtn = document.getElementById("siteBtn");
+const siteInput = document.getElementById("siteInput");
+async function submitSite(){
+  const q = siteInput.value.trim();
+  if (!q){ siteInput.focus(); return; }
+  haptic();
+  siteBtn.disabled = true; siteBtn.textContent = "Открываю…";
+  try{
+    const data = await api("/open_site", { query:q });
+    document.getElementById("doneUrl").textContent = data.url || q;
+    showView("done"); haptic("medium");
+  }catch(err){
+    if (err.demo){ toast("Демо-режим. Настрой backend через ⚙", "err"); }
+    else toast("Ошибка: " + err.message, "err");
+  }finally{
+    siteBtn.disabled = false; siteBtn.textContent = "Открыть сайт";
+  }
+}
+siteBtn.onclick = submitSite;
+siteInput.addEventListener("keydown", e=>{ if(e.key==="Enter") submitSite(); });
+
+/* ─────────────────── Ask AI (chat) ─────────────────── */
+const chatView = document.getElementById("view-chat");
+const chatEmpty = document.getElementById("chatEmpty");
+const askInput = document.getElementById("askInput");
+
+function addMsg(text, cls){
+  chatEmpty.style.display = "none";
+  const d = document.createElement("div");
+  d.className = "msg " + cls; d.textContent = text;
+  chatView.appendChild(d);
+  document.querySelector("main").scrollTop = 1e9;
+  return d;
+}
+function addTyping(){
+  chatEmpty.style.display = "none";
+  const d = document.createElement("div");
+  d.className = "typing"; d.innerHTML = "<i></i><i></i><i></i>";
+  chatView.appendChild(d);
+  document.querySelector("main").scrollTop = 1e9;
+  return d;
+}
+
+document.getElementById("sparkBtn").onclick = ()=>{ haptic(); showView("chat"); setTimeout(()=>askInput.focus(),150); };
+
+async function submitAsk(){
+  const text = askInput.value.trim();
+  if (!text) return;
+  haptic();
+  showView("chat");
+  addMsg(text, "me");
+  askInput.value = "";
+  const typing = addTyping();
+  try{
+    const data = await api("/ask", { text });
+    typing.remove();
+    if (data.reply) addMsg(data.reply, "ai");
+    if (data.ran && data.ok) addMsg("✓ Выполнено на ПК", "sys");
+    else if (data.ran && !data.ok) addMsg("⚠️ " + (data.error||"ошибка выполнения"), "sys");
+  }catch(err){
+    typing.remove();
+    if (err.demo) addMsg("Демо-режим. Настрой backend через ⚙, чтобы общаться с ИИ.", "sys");
+    else addMsg("Ошибка: " + err.message, "sys");
+  }
+}
+document.getElementById("sendBtn").onclick = submitAsk;
+askInput.addEventListener("keydown", e=>{ if(e.key==="Enter") submitAsk(); });
+
+/* ─────────────────── Settings (backend URL) ─────────────────── */
+document.getElementById("gearBtn").onclick = ()=>{
+  const cur = isConfigured() ? API_BASE : "";
+  const val = prompt("HTTPS-адрес backend (туннель или VPS):\nнапример https://woyuqe.trycloudflare.com", cur);
+  if (val === null) return;
+  const clean = val.trim().replace(/\/+$/,"");
+  if (clean){ localStorage.setItem("woyuqe_api", clean); API_BASE = clean; }
+  else { localStorage.removeItem("woyuqe_api"); API_BASE = DEFAULT_API_BASE; }
+  toast("Адрес сохранён", "ok");
+  loadApps();
+};
+
+/* ─────────────────── Init ─────────────────── */
+loadApps();
+</script>
+</body>
+</html>
