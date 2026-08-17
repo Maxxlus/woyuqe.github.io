@@ -338,7 +338,7 @@ function toast(msg, type){
 /* ─────────────────── API ─────────────────── */
 async function api(path, body){
   if (!isConfigured()) { throw {demo:true}; }
-  const res = await fetch(API_BASE + path, {
+  const res = await fetch(API_BASE + "/api" + path, {
     method: body ? "POST" : "GET",
     headers: {
       "Content-Type":"application/json",
