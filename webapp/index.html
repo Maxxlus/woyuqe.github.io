@@ -229,7 +229,11 @@
 const DEFAULT_API_BASE = "https://REPLACE_WITH_YOUR_BACKEND";
 
 const qsApi = new URLSearchParams(location.search).get("api");
-let API_BASE = (qsApi || localStorage.getItem("woyuqe_api") || DEFAULT_API_BASE).replace(/\/+$/,"");
+const _stored = localStorage.getItem("woyuqe_api");
+// если страницу раздаёт сам backend (в пути есть /app) — берём тот же origin,
+// тогда при тесте через туннель ничего настраивать не нужно
+const _sameOrigin = /\/app(\/|$)/.test(location.pathname) ? location.origin : "";
+let API_BASE = (qsApi || _stored || _sameOrigin || DEFAULT_API_BASE).replace(/\/+$/,"");
 
 const tg = window.Telegram && window.Telegram.WebApp ? window.Telegram.WebApp : null;
 const INIT_DATA = tg ? tg.initData : "";
